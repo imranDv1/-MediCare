@@ -1,8 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
 *, *::before, *::after {
-  transition: none !important;
-  animation: none !important;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s, margin-left 0.2s, left 0.2s, width 0.2s, transform 0.2s, opacity 0.2s;
 }
 
 :root {
@@ -134,7 +133,7 @@ a:hover {
   scrollbar-width: none;
   -ms-overflow-style: none;
   z-index: 1000;
-  transition: width 0s;
+  transition: width 0.2s;
 }
 .sidebar::-webkit-scrollbar { display: none; }
 
@@ -170,6 +169,14 @@ a:hover {
 
 .sidebar.collapsed .sidebar-logout i {
   margin: 0;
+}
+
+.sidebar.collapsed ~ .topbar {
+  left: var(--sidebar-collapsed-w);
+}
+
+.sidebar.collapsed ~ .main-content {
+  margin-left: var(--sidebar-collapsed-w);
 }
 
 .sidebar-logo {
@@ -1091,10 +1098,20 @@ tbody tr:hover td { background: var(--brand-light); }
   width: 100%;
 }
 
+/* SIDEBAR OVERLAY */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 998;
+}
+
 /* RESPONSIVE */
 @media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); width: var(--sidebar-w); }
+  .sidebar { transform: translateX(-100%); width: var(--sidebar-w); z-index: 999; }
   .sidebar.show { transform: translateX(0); }
+  .sidebar.show ~ .sidebar-overlay { display: block; }
   .sidebar.collapsed { width: var(--sidebar-w); }
   .sidebar.collapsed .sidebar-logo-text,
   .sidebar.collapsed .sidebar-section-label,
@@ -1108,8 +1125,9 @@ tbody tr:hover td { background: var(--brand-light); }
   .sidebar.collapsed .sidebar-logout { justify-content: flex-start; }
   .main-content { margin-left: 0; padding: var(--topbar-h) 16px 0 16px; }
   .topbar { left: 0; }
-  .topbar-search input { width: 140px; }
   .page-header { flex-direction: column; gap: 12px; }
+  .page-header-actions { flex-wrap: wrap; gap: 6px; }
+  .page-header-actions .btn { font-size: 12px; height: 30px; padding: 0 10px; }
 }
 
 /* Dropdown menu (Bootstrap overrides) */
@@ -1152,6 +1170,21 @@ tbody tr:hover td { background: var(--brand-light); }
 }
 
 
+
+#pageLoader {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 3px; z-index: 9999;
+  pointer-events: none;
+  background: transparent;
+}
+#pageLoader::after {
+  content: ''; display: block; height: 100%;
+  width: 0; background: var(--brand);
+  transition: width 0s;
+}
+#pageLoader.active::after {
+  width: 60%; transition: width 30s ease;
+}
 
 .stat-card > div {
     align-items: flex-start ; /* changes layout away from vertical centering */

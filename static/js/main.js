@@ -32,6 +32,16 @@ $(document).ready(function() {
         $('input[type="date"]').attr('placeholder', 'dd/mm/yyyy');
     }
 
+    $('#sidebarOverlay').on('click', function() {
+        $('.sidebar').removeClass('show');
+    });
+
+    $(document).on('click', 'a[href]:not([target="_blank"]):not([href^="#"]):not([href^="javascript"])', function(e) {
+        var href = this.getAttribute('href');
+        if (href && href !== '#' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            $('#pageLoader').addClass('active');
+        }
+    });
 
 });
 

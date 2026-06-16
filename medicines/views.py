@@ -5,6 +5,7 @@ from datetime import date, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import F, Q, Count, Sum
 from django.db.models.functions import TruncMonth
@@ -44,21 +45,113 @@ def pharmacist_required(view_func):
 def dashboard(request):
     today = date.today()
     thirty_days = today + timedelta(days=30)
+    cache_key = 'dashboard_stats_' + today.isoformat()
 
-    total_medicines = Medicine.objects.count()
-    out_of_stock_count = Medicine.objects.filter(stock_quantity__lte=0).count()
-    low_stock_count = Medicine.objects.filter(
-        Q(stock_quantity__gt=0) & Q(stock_quantity__lte=F('low_stock_threshold'))
-    ).count()
-    expiring_soon_count = Medicine.objects.filter(
-        expiry_date__gte=today, expiry_date__lte=thirty_days
-    ).count()
+    cached = cache.get(cache_key)
+    if cached:
+        counts = cached['counts']
+        chart_data = cached['chart_data']
+    else:
+        total_medicines = Medicine.objects.count()
+        out_of_stock_count = Medicine.objects.filter(stock_quantity__lte=0).count()
+        low_stock_count = Medicine.objects.filter(
+            Q(stock_quantity__gt=0) & Q(stock_quantity__lte=F('low_stock_threshold'))
+        ).count()
+        expiring_soon_count = Medicine.objects.filter(
+            expiry_date__gte=today, expiry_date__lte=thirty_days
+        ).count()
 
-    today_sales_total = 0
-    if Sale:
-        today_sales = Sale.objects.filter(timestamp__date=today)
-        total = today_sales.aggregate(t=Sum('total'))['t'] or 0
-        today_sales_total = float(total)
+        today_sales_total = 0
+        if Sale:
+            today_sales = Sale.objects.filter(timestamp__date=today)
+            total = today_sales.aggregate(t=Sum('total'))['t'] or 0
+            today_sales_total = float(total)
+
+        in_stock_count = total_medicines - low_stock_count - out_of_stock_count
+
+        categories = Category.objects.annotate(medicine_count=Count('medicines'))
+        category_labels = json.dumps([c.name for c in categories])
+        category_data = json.dumps([c.medicine_count for c in categories])
+
+        top_medicines_labels = json.dumps([])
+        top_medicines_data = json.dumps([])
+        usage_last_30_days_labels = json.dumps([])
+        usage_last_30_days_data = json.dumps([])
+
+        if SaleItem:
+            top_items = SaleItem.objects.values('medicine__name').annotate(
+                total_qty=Sum('quantity')
+            ).order_by('-total_qty')[:10]
+            if top_items:
+                top_medicines_labels = json.dumps([item['medicine__name'] for item in top_items])
+                top_medicines_data = json.dumps([int(item['total_qty']) for item in top_items])
+
+            usage_items = SaleItem.objects.filter(
+                sale__timestamp__date__gte=today - timedelta(days=30)
+            ).values('medicine__name').annotate(total_qty=Sum('quantity')).order_by('-total_qty')[:10]
+            if usage_items:
+                usage_last_30_days_labels = json.dumps([item['medicine__name'] for item in usage_items])
+                usage_last_30_days_data = json.dumps([int(item['total_qty']) for item in usage_items])
+
+        stock_status_labels = json.dumps(['In Stock', 'Low Stock', 'Out of Stock'])
+        stock_status_data = json.dumps([in_stock_count, low_stock_count, out_of_stock_count])
+
+        six_months_ago = today - timedelta(days=180)
+        months = []
+        for i in range(6):
+            m = today.replace(day=1) - timedelta(days=30 * i)
+            months.append(m.strftime('%Y-%m'))
+        months.reverse()
+
+        monthly_sales_labels = json.dumps([])
+        monthly_sales_data = json.dumps([])
+        if Sale:
+            monthly_sales = Sale.objects.filter(timestamp__date__gte=six_months_ago) \
+                .annotate(month=TruncMonth('timestamp')) \
+                .values('month').annotate(total=Sum('total')).order_by('month')
+            sales_by_month = {s['month'].strftime('%Y-%m') if s['month'] else '': float(s['total']) for s in monthly_sales}
+            monthly_sales_labels = json.dumps(months)
+            monthly_sales_data = json.dumps([sales_by_month.get(m, 0) for m in months])
+
+        movements = StockMovement.objects.filter(timestamp__date__gte=six_months_ago) \
+            .annotate(month=TruncMonth('timestamp')) \
+            .values('month', 'movement_type').annotate(total=Sum('quantity')).order_by('month')
+        mov_in = {}
+        mov_out = {}
+        for mov in movements:
+            key = mov['month'].strftime('%Y-%m') if mov['month'] else ''
+            if mov['movement_type'] == 'IN':
+                mov_in[key] = int(mov['total'])
+            else:
+                mov_out[key] = int(mov['total'])
+        monthly_movement_labels = json.dumps(months)
+        monthly_movements_in = json.dumps([mov_in.get(m, 0) for m in months])
+        monthly_movements_out = json.dumps([mov_out.get(m, 0) for m in months])
+
+        counts = {
+            'total_medicines': total_medicines,
+            'low_stock_count': low_stock_count,
+            'expiring_soon_count': expiring_soon_count,
+            'out_of_stock_count': out_of_stock_count,
+            'in_stock_count': in_stock_count,
+            'today_sales_total': today_sales_total,
+        }
+        chart_data = {
+            'category_labels': category_labels,
+            'category_data': category_data,
+            'top_medicines_labels': top_medicines_labels,
+            'top_medicines_data': top_medicines_data,
+            'usage_last_30_days_labels': usage_last_30_days_labels,
+            'usage_last_30_days_data': usage_last_30_days_data,
+            'stock_status_labels': stock_status_labels,
+            'stock_status_data': stock_status_data,
+            'monthly_sales_labels': monthly_sales_labels,
+            'monthly_sales_data': monthly_sales_data,
+            'monthly_movement_labels': monthly_movement_labels,
+            'monthly_movements_in': monthly_movements_in,
+            'monthly_movements_out': monthly_movements_out,
+        }
+        cache.set(cache_key, {'counts': counts, 'chart_data': chart_data}, 300)
 
     expiring_medicines = Medicine.objects.filter(
         expiry_date__gte=today, expiry_date__lte=thirty_days
@@ -70,71 +163,6 @@ def dashboard(request):
 
     recent_movements = StockMovement.objects.select_related('medicine', 'user').order_by('-timestamp')[:10]
 
-    categories = Category.objects.annotate(medicine_count=Count('medicines'))
-    category_labels = json.dumps([c.name for c in categories])
-    category_data = json.dumps([c.medicine_count for c in categories])
-
-    top_medicines_labels = json.dumps([])
-    top_medicines_data = json.dumps([])
-    usage_last_30_days_labels = json.dumps([])
-    usage_last_30_days_data = json.dumps([])
-
-    if SaleItem:
-        top_items = SaleItem.objects.values('medicine__name').annotate(
-            total_qty=Sum('quantity')
-        ).order_by('-total_qty')[:10]
-        if top_items:
-            top_medicines_labels = json.dumps([item['medicine__name'] for item in top_items])
-            top_medicines_data = json.dumps([int(item['total_qty']) for item in top_items])
-
-        usage_items = SaleItem.objects.filter(
-            sale__timestamp__date__gte=today - timedelta(days=30)
-        ).values('medicine__name').annotate(total_qty=Sum('quantity')).order_by('-total_qty')[:10]
-        if usage_items:
-            usage_last_30_days_labels = json.dumps([item['medicine__name'] for item in usage_items])
-            usage_last_30_days_data = json.dumps([int(item['total_qty']) for item in usage_items])
-
-    in_stock_count = total_medicines - low_stock_count - out_of_stock_count
-    stock_status_labels = json.dumps(['In Stock', 'Low Stock', 'Out of Stock'])
-    stock_status_data = json.dumps([in_stock_count, low_stock_count, out_of_stock_count])
-
-    monthly_sales_labels = json.dumps([])
-    monthly_sales_data = json.dumps([])
-    monthly_movements_in = json.dumps([])
-    monthly_movements_out = json.dumps([])
-    monthly_movement_labels = json.dumps([])
-
-    six_months_ago = today - timedelta(days=180)
-    months = []
-    for i in range(6):
-        m = today.replace(day=1) - timedelta(days=30 * i)
-        months.append(m.strftime('%Y-%m'))
-    months.reverse()
-
-    if Sale:
-        monthly_sales = Sale.objects.filter(timestamp__date__gte=six_months_ago) \
-            .annotate(month=TruncMonth('timestamp')) \
-            .values('month').annotate(total=Sum('total')).order_by('month')
-        sales_by_month = {s['month'].strftime('%Y-%m') if s['month'] else '': float(s['total']) for s in monthly_sales}
-        monthly_sales_labels = json.dumps(months)
-        monthly_sales_data = json.dumps([sales_by_month.get(m, 0) for m in months])
-
-    movements = StockMovement.objects.filter(timestamp__date__gte=six_months_ago) \
-        .annotate(month=TruncMonth('timestamp')) \
-        .values('month', 'movement_type').annotate(total=Sum('quantity')).order_by('month')
-    mov_in = {}
-    mov_out = {}
-    for mov in movements:
-        key = mov['month'].strftime('%Y-%m') if mov['month'] else ''
-        if mov['movement_type'] == 'IN':
-            mov_in[key] = int(mov['total'])
-        else:
-            mov_out[key] = int(mov['total'])
-    monthly_movement_labels = json.dumps(months)
-    monthly_movements_in = json.dumps([mov_in.get(m, 0) for m in months])
-    monthly_movements_out = json.dumps([mov_out.get(m, 0) for m in months])
-
-    # Expiry notifications with dedup (once per day)
     expired_meds = Medicine.objects.filter(expiry_date__lte=today)
     for med in expired_meds:
         msg = f'"{med.name}" has expired on {med.expiry_date}.'
@@ -154,28 +182,11 @@ def dashboard(request):
             create_notification('near_expiry', msg)
 
     context = {
-        'total_medicines': total_medicines,
-        'low_stock_count': low_stock_count,
-        'expiring_soon_count': expiring_soon_count,
-        'out_of_stock_count': out_of_stock_count,
-        'in_stock_count': in_stock_count,
-        'today_sales_total': today_sales_total,
+        **counts,
         'expiring_medicines': expiring_medicines,
         'low_stock_medicines': low_stock_medicines,
         'recent_movements': recent_movements,
-        'category_labels': category_labels,
-        'category_data': category_data,
-        'top_medicines_labels': top_medicines_labels,
-        'top_medicines_data': top_medicines_data,
-        'usage_last_30_days_labels': usage_last_30_days_labels,
-        'usage_last_30_days_data': usage_last_30_days_data,
-        'stock_status_labels': stock_status_labels,
-        'stock_status_data': stock_status_data,
-        'monthly_sales_labels': monthly_sales_labels,
-        'monthly_sales_data': monthly_sales_data,
-        'monthly_movement_labels': monthly_movement_labels,
-        'monthly_movements_in': monthly_movements_in,
-        'monthly_movements_out': monthly_movements_out,
+        **chart_data,
     }
     return render(request, 'medicines/dashboard.html', context)
 

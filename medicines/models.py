@@ -21,7 +21,7 @@ class Medicine(models.Model):
         ('tablet', 'Tablet'), ('capsule', 'Capsule'), ('syrup', 'Syrup'),
         ('injection', 'Injection'), ('cream', 'Cream'), ('drops', 'Drops'),
     ]
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, db_index=True)
     generic_name = models.CharField(max_length=200, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='medicines')
     brand = models.CharField(max_length=200, blank=True)
@@ -29,10 +29,10 @@ class Medicine(models.Model):
     dosage_form = models.CharField(max_length=20, choices=DOSAGE_FORM_CHOICES, default='tablet')
     strength = models.CharField(max_length=100, blank=True, help_text='e.g., 500mg')
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    stock_quantity = models.IntegerField(default=0)
+    stock_quantity = models.IntegerField(default=0, db_index=True)
     low_stock_threshold = models.IntegerField(default=10)
     manufacturing_date = models.DateField(null=True, blank=True)
-    expiry_date = models.DateField()
+    expiry_date = models.DateField(db_index=True)
     supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.SET_NULL, null=True, blank=True, related_name='medicines')
     image = models.URLField(max_length=500, blank=True, default='')
     barcode_sku = models.CharField(max_length=100, unique=True, blank=True)
@@ -86,7 +86,7 @@ class StockMovement(models.Model):
     quantity = models.IntegerField()
     note = models.TextField(blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
 
     def __str__(self):
         return f"{self.movement_type} - {self.medicine.name} x{self.quantity}"
