@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-text">
+        <h1>Manage Users</h1>
+        <p>View and manage system users</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'user_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New User
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="get" class="row g-2 mb-3">
+            <div class="col-md-5">
+                <div class="search-bar" style="width:100%;">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" name="q" placeholder="Search by username or email..." value="{{ query }}" style="width:100%;">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="role" class="form-control">
+                    <option value="">All Roles</option>
+                    <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin</option>
+                    <option value="pharmacist" {% if role_filter == 'pharmacist' %}selected{% endif %}>Pharmacist</option>
+                    <option value="staff" {% if role_filter == 'staff' %}selected{% endif %}>Staff</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-control">
+                    <option value="">All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'user_list' %}" class="btn btn-secondary w-100">
+                    <i class="fas fa-undo"></i> Reset
+                </a>
+            </div>
+        </form>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Date Joined</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user_obj in users %}
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-subtle);display:inline-flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-secondary);font-weight:500;flex-shrink:0;">
+                                    {{ user_obj.username|first|upper }}
+                                </div>
+                                <div>
+                                    <div style="font-weight:500;">{{ user_obj.get_full_name|default:user_obj.username }}</div>
+                                    <small style="color:var(--text-tertiary);">@{{ user_obj.username }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ user_obj.email|default:'—' }}</td>
+                        <td>
+                            {% if user_obj.is_superuser %}
+                            <span class="badge badge-neutral">Admin</span>
+                            {% elif user_obj.is_staff %}
+                            <span class="badge badge-neutral">Pharmacist</span>
+                            {% else %}
+                            <span class="badge badge-neutral">Staff</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user_obj.phone|default:'—' }}</td>
+                        <td>
+                            {% if user_obj.is_active %}
+                            <span class="badge badge-success">Active</span>
+                            {% else %}
+                            <span class="badge badge-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user_obj.date_joined|date:'Y-m-d' }}</td>
+                        <td style="text-align:right;">
+                            <a href="{% url 'user_edit' user_obj.pk %}" class="btn-icon" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'user_delete' user_obj.pk %}" class="btn-icon" title="Delete" style="border-color:var(--btn-danger-border);color:var(--btn-danger-text);">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="table-empty">
+                                <i class="fas fa-users" style="font-size:32px;margin-bottom:8px;display:block;"></i>
+                                <h5>No Users Found</h5>
+                                <p>No users match your search criteria.</p>
+                                <a href="{% url 'user_create' %}" class="btn btn-primary" style="margin-top:8px;">
+                                    <i class="fas fa-plus"></i> Add New User
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if users.has_other_pages %}
+        <nav>
+            <ul class="pagination">
+                {% if users.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">&laquo;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ users.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">&lsaquo;</a>
+                </li>
+                {% endif %}
+                {% for num in users.paginator.page_range %}
+                <li class="page-item {% if users.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                {% if users.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ users.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">&rsaquo;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ users.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">&raquo;</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.querySelectorAll('select.form-select').forEach(el => {
+        el.addEventListener('change', function() { this.closest('form').submit(); });
+    });
+</script>
+{% endblock %}

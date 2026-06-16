@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inventory Report{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-text">
+        <h1>Inventory Report</h1>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'export_inventory_csv' %}" class="btn btn-secondary"><i class="fas fa-file-csv"></i> Export CSV</a>
+        <a href="{% url 'export_inventory_pdf' %}" class="btn btn-secondary"><i class="fas fa-file-pdf"></i> Export PDF</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="stat-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-cubes stat-card-icon"></i>
+                <div>
+                    <div class="stat-card-label">Total Items in Stock</div>
+                    <div class="stat-card-value">{{ total_items_in_stock }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="stat-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-dollar-sign stat-card-icon"></i>
+                <div>
+                    <div class="stat-card-label">Total Stock Value</div>
+                    <div class="stat-card-value">${{ total_stock_value|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><span class="card-title">Category Breakdown</span></div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><span class="card-title">Category Details</span></div>
+            <div class="card-body">
+                {% if category_breakdown %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Medicine Count</th>
+                                <th>Total Stock</th>
+                                <th>Total Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cat in category_breakdown %}
+                            <tr>
+                                <td>{{ cat.name }}</td>
+                                <td>{{ cat.medicine_count }}</td>
+                                <td>{{ cat.total_stock }}</td>
+                                <td><span class="price">${{ cat.total_value|floatformat:2 }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-tags"></i>
+                    <p>No categories available.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><span class="card-title">Full Inventory</span></div>
+    <div class="card-body">
+        {% if medicines %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Stock</th>
+                        <th>Price</th>
+                        <th>Value</th>
+                        <th>Expiry</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for med in medicines %}
+                    <tr>
+                        <td><a href="{% url 'medicine_detail' med.pk %}">{{ med.name }}</a></td>
+                        <td>{{ med.category.name }}</td>
+                        <td style="color:{% if med.stock_quantity <= med.low_stock_threshold %}var(--status-danger-text){% endif %};">{{ med.stock_quantity }}</td>
+                        <td><span class="price">${{ med.price|floatformat:2 }}</span></td>
+                        <td><span class="price">${{ med.stock_value|floatformat:2 }}</span></td>
+                        <td style="color:{% if med.is_expired %}var(--status-danger-text){% endif %};">{{ med.expiry_date|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <nav class="mt-3">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1"><i class="fas fa-angle-double-left"></i></a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class="fas fa-angle-left"></i></a></li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}"><i class="fas fa-angle-right"></i></a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}"><i class="fas fa-angle-double-right"></i></a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-cubes"></i>
+            <p>No medicines in inventory.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {{ category_data_json|safe }},
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top', labels: { boxWidth: 10, boxHeight: 10, borderRadius: 3, useBorderRadius: true, font: { size: 12 }, color: '#6b6b66', padding: 16 } },
+                tooltip: { backgroundColor: '#1a1a18', titleColor: '#ffffff', bodyColor: '#a8a8a2', padding: 10, cornerRadius: 8 }
+            },
+            scales: {
+                x: { grid: { display: false }, border: { display: false }, ticks: { color: '#9a9a94', font: { size: 11 } } },
+                y: { grid: { color: '#f0f0ee', lineWidth: 1 }, border: { display: false }, ticks: { color: '#9a9a94', font: { size: 11 } }, beginAtZero: true }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

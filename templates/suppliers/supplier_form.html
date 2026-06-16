@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if supplier %}Edit {{ supplier.name }}{% else %}Add Supplier{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-text">
+        <h1>{% if supplier %}Edit Supplier{% else %}Add Supplier{% endif %}</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">{% if supplier %}Edit {{ supplier.name }}{% else %}New Supplier{% endif %}</span>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        <span class="alert-icon"><i class="fas fa-exclamation-circle"></i></span>
+                        <div>{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Name <span style="color:var(--status-danger-text);">*</span></label>
+                            {{ form.name }}
+                            {% for error in form.name.errors %}<div class="form-error mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.contact_person.id_for_label }}" class="form-label">Contact Person</label>
+                            {{ form.contact_person }}
+                            {% for error in form.contact_person.errors %}<div class="form-error mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">Phone <span style="color:var(--status-danger-text);">*</span></label>
+                            {{ form.phone }}
+                            {% for error in form.phone.errors %}<div class="form-error mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.email }}
+                            {% for error in form.email.errors %}<div class="form-error mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.address.id_for_label }}" class="form-label">Address</label>
+                        {{ form.address }}
+                        {% for error in form.address.errors %}<div class="form-error mt-1">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                        {{ form.notes }}
+                        {% for error in form.notes.errors %}<div class="form-error mt-1">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'supplier_list' %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if supplier %}Update{% else %}Save{% endif %} Supplier
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

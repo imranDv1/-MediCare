@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-text">
+        <h1>Reports</h1>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-pills stat-card-icon"></i>
+                <div>
+                    <div class="stat-card-label">Total Medicines</div>
+                    <div class="stat-card-value">{{ total_medicines }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-tags stat-card-icon"></i>
+                <div>
+                    <div class="stat-card-label">Categories</div>
+                    <div class="stat-card-value">{{ total_categories }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-truck stat-card-icon"></i>
+                <div>
+                    <div class="stat-card-label">Suppliers</div>
+                    <div class="stat-card-value">{{ total_suppliers }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-dollar-sign stat-card-icon"></i>
+                <div>
+                    <div class="stat-card-label">Total Sales</div>
+                    <div class="stat-card-value">${{ total_sales|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:1rem;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h5>Sales Report</h5>
+                <p style="color:var(--text-tertiary);">Revenue, transactions, and payment breakdown</p>
+                <a href="{% url 'sales_report' %}" class="btn btn-primary">View Report</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:1rem;">
+                    <i class="fas fa-cubes"></i>
+                </div>
+                <h5>Inventory Report</h5>
+                <p style="color:var(--text-tertiary);">Stock levels, values, and category breakdown</p>
+                <a href="{% url 'inventory_report' %}" class="btn btn-primary">View Report</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:1rem;">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h5>Expiry Report</h5>
+                <p style="color:var(--text-tertiary);">Expired and soon-to-expire medicines</p>
+                <a href="{% url 'expiry_report' %}" class="btn btn-primary">View Report</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div style="font-size:2.5rem;color:var(--text-tertiary);margin-bottom:1rem;">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <h5>Category Report</h5>
+                <p style="color:var(--text-tertiary);">Category-wise medicine and stock distribution</p>
+                <a href="{% url 'category_report' %}" class="btn btn-primary">View Report</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}{% endblock %}

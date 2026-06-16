@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete User{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-text">
+        <h1>Delete User</h1>
+        <p>Remove a user from the system</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title" style="color:var(--status-danger-text);"><i class="fas fa-exclamation-triangle me-2"></i> Confirm Deletion</span>
+            </div>
+            <div class="card-body text-center" style="padding:32px 24px;">
+                <div style="width:64px;height:64px;border-radius:50%;background:var(--status-danger-bg);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                    <i class="fas fa-user-slash" style="font-size:28px;color:var(--status-danger-text);"></i>
+                </div>
+                <h5 style="font-weight:500;margin-bottom:8px;">Are you sure you want to delete user <span style="color:var(--status-danger-text);">"{{ object.username }}"</span>?</h5>
+                <p style="color:var(--text-secondary);margin-bottom:4px;">This action cannot be undone.</p>
+                {% if object.get_full_name %}
+                <p style="color:var(--text-secondary);margin-bottom:4px;">Name: {{ object.get_full_name }}</p>
+                {% endif %}
+                <p style="color:var(--text-secondary);margin-bottom:0;">Email: {{ object.email|default:'No email' }}</p>
+                <hr style="margin:20px 0;">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'user_list' %}" class="btn btn-secondary px-4">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger px-4">
+                            <i class="fas fa-trash me-1"></i> Delete User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

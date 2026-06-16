@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sale #{{ sale.invoice_no }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-text">
+        <h2>Sale #{{ sale.invoice_no }}</h2>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'print_receipt' sale.pk %}" class="btn btn-secondary" target="_blank"><i class="fas fa-print"></i> Print Receipt</a>
+        <a href="{% url 'sales_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Sales</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><span class="card-title"><i class="fas fa-info-circle"></i> Sale Information</span></div>
+            <div class="card-body">
+                <table class="table" style="border:none;">
+                    <tr>
+                        <td style="width:40%;font-weight:500;">Invoice #</td>
+                        <td>{{ sale.invoice_no }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:500;">Patient</td>
+                        <td>{{ sale.patient_name|default:'-' }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:500;">Doctor Ref</td>
+                        <td>{{ sale.doctor_ref|default:'-' }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:500;">Payment Method</td>
+                        <td>
+                            {% if sale.payment_method == 'cash' %}
+                            <span class="badge badge-success">Cash</span>
+                            {% elif sale.payment_method == 'card' %}
+                            <span class="badge badge-info">Card</span>
+                            {% elif sale.payment_method == 'insurance' %}
+                            <span class="badge badge-warning">Insurance</span>
+                            {% else %}
+                            <span class="badge badge-neutral">{{ sale.get_payment_method_display }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:500;">User</td>
+                        <td>{{ sale.user.get_full_name|default:sale.user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:500;">Date</td>
+                        <td>{{ sale.timestamp|date:'Y-m-d H:i:s' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><span class="card-title"><i class="fas fa-calculator"></i> Summary</span></div>
+            <div class="card-body">
+                <table class="table" style="border:none;">
+                    <tr>
+                        <td style="width:40%;font-weight:500;">Items Count</td>
+                        <td>{{ sale.items.count }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:500;">Subtotal</td>
+                        <td><span class="price">${{ sale.subtotal|floatformat:2 }}</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:500;">Discount</td>
+                        <td>{{ sale.discount|floatformat:2 }}{% if sale.discount > 0 %}%{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:500;">Total</td>
+                        <td><span class="price" style="font-size:18px;">${{ sale.total|floatformat:2 }}</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><span class="card-title"><i class="fas fa-pills"></i> Items</span></div>
+    <div class="card-body">
+        {% if sale.items.all %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Medicine Name</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in sale.items.all %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.medicine.name }} {% if item.medicine.strength %}({{ item.medicine.strength }}){% endif %}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td><span class="price">${{ item.unit_price|floatformat:2 }}</span></td>
+                        <td><span class="price">${{ item.subtotal|floatformat:2 }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="4" style="text-align:right;">Subtotal</th>
+                        <th><span class="price">${{ sale.subtotal|floatformat:2 }}</span></th>
+                    </tr>
+                    <tr>
+                        <th colspan="4" style="text-align:right;">Discount</th>
+                        <th>{{ sale.discount|floatformat:2 }}{% if sale.discount > 0 %}%{% endif %}</th>
+                    </tr>
+                    <tr>
+                        <th colspan="4" style="text-align:right;">Total</th>
+                        <th><span class="price" style="font-size:16px;">${{ sale.total|floatformat:2 }}</span></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-pills"></i>
+            <h5>No Items</h5>
+            <p>This sale has no items.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

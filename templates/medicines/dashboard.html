@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-text">
+        <h1>Dashboard</h1>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-pills stat-card-icon"></i>
+                <div>
+                    <div class="stat-card-label">Total Medicines</div>
+                    <div class="stat-card-value">{{ total_medicines }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-exclamation-triangle stat-card-icon"></i>
+                <div>
+                    <div class="stat-card-label">Low Stock Items</div>
+                    <div class="stat-card-value">{{ low_stock_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-clock stat-card-icon"></i>
+                <div>
+                    <div class="stat-card-label">Expiring Soon</div>
+                    <div class="stat-card-value">{{ expiring_soon_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-dollar-sign stat-card-icon"></i>
+                <div>
+                    <div class="stat-card-label">Today's Sales</div>
+                    <div class="stat-card-value">{{ today_sales_total }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><span class="card-title">Medicine Usage (Last 30 Days)</span></div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="usageChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <div class="card">
+            <div class="card-header"><span class="card-title">Medicines by Category</span></div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <div class="card">
+            <div class="card-header"><span class="card-title">Top 10 Most Used</span></div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="topMedicinesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Expiry Alerts</span>
+            </div>
+            <div class="card-body">
+                {% if expiring_medicines %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Medicine</th>
+                                <th>Expiry Date</th>
+                                <th>Days Left</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for med in expiring_medicines %}
+                            <tr>
+                                <td><a href="{% url 'medicine_detail' med.pk %}">{{ med.name }}</a></td>
+                                <td>{{ med.expiry_date|date:"M d, Y" }}</td>
+                                <td>{{ med.days_until_expiry }}</td>
+                                <td>
+                                    {% if med.days_until_expiry <= 0 %}
+                                    <span class="badge badge-danger">Expired</span>
+                                    {% else %}
+                                    <span class="badge badge-warning">{{ med.days_until_expiry }} days</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>No medicines expiring soon.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Low Stock Alerts</span>
+            </div>
+            <div class="card-body">
+                {% if low_stock_medicines %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Medicine</th>
+                                <th>Stock</th>
+                                <th>Threshold</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for med in low_stock_medicines %}
+                            <tr>
+                                <td><a href="{% url 'medicine_detail' med.pk %}">{{ med.name }}</a></td>
+                                <td>{{ med.stock_quantity }}</td>
+                                <td>{{ med.low_stock_threshold }}</td>
+                                <td>
+                                    {% if med.stock_quantity <= 0 %}
+                                    <span class="badge badge-danger">Out of Stock</span>
+                                    {% else %}
+                                    <span class="badge badge-warning">Low Stock</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>All medicines are well-stocked.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Recent Activity</span>
+            </div>
+            <div class="card-body">
+                {% if recent_movements %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Medicine</th>
+                                <th>Type</th>
+                                <th>Quantity</th>
+                                <th>User</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movement in recent_movements %}
+                            <tr>
+                                <td><a href="{% url 'medicine_detail' movement.medicine.pk %}">{{ movement.medicine.name }}</a></td>
+                                <td>
+                                    {% if movement.movement_type == 'IN' %}
+                                    <span class="badge badge-success">IN</span>
+                                    {% else %}
+                                    <span class="badge badge-warning">OUT</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ movement.quantity }}</td>
+                                <td>{{ movement.user.get_full_name|default:movement.user.username }}</td>
+                                <td>{{ movement.timestamp|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-exchange-alt"></i>
+                    <p>No recent stock movements.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx1 = document.getElementById('usageChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: {{ usage_last_30_days_labels|safe }},
+            datasets: [{
+                label: 'Usage',
+                data: {{ usage_last_30_days_data|safe }},
+                borderColor: '#1a1a18',
+                backgroundColor: 'rgba(26,26,24,0.06)',
+                borderWidth: 1.5,
+                fill: true,
+                tension: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1a1a18',
+                    titleColor: '#ffffff',
+                    bodyColor: '#a8a8a2',
+                    padding: 10,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                x: { grid: { display: false }, border: { display: false }, ticks: { color: '#9a9a94', font: { size: 11 } } },
+                y: { grid: { color: '#f0f0ee', lineWidth: 1 }, border: { display: false }, ticks: { color: '#9a9a94', font: { size: 11 } }, beginAtZero: true }
+            }
+        }
+    });
+
+    var ctx2 = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'pie',
+        data: {
+            labels: {{ category_labels|safe }},
+            datasets: [{
+                data: {{ category_data|safe }},
+                backgroundColor: ['#1a1a18', '#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 14, font: { size: 11 }, color: '#6b6b66' } },
+                tooltip: { backgroundColor: '#1a1a18', titleColor: '#ffffff', bodyColor: '#a8a8a2', padding: 10, cornerRadius: 8 }
+            }
+        }
+    });
+
+    var ctx3 = document.getElementById('topMedicinesChart').getContext('2d');
+    new Chart(ctx3, {
+        type: 'bar',
+        data: {
+            labels: {{ top_medicines_labels|safe }},
+            datasets: [{
+                label: 'Used',
+                data: {{ top_medicines_data|safe }},
+                backgroundColor: '#1a1a18',
+                borderRadius: 4,
+                borderSkipped: 'bottom'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: '#1a1a18', titleColor: '#ffffff', bodyColor: '#a8a8a2', padding: 10, cornerRadius: 8 }
+            },
+            scales: {
+                x: { grid: { color: '#f0f0ee', lineWidth: 1 }, border: { display: false }, ticks: { color: '#9a9a94', font: { size: 11 } }, beginAtZero: true },
+                y: { grid: { display: false }, border: { display: false }, ticks: { color: '#9a9a94', font: { size: 11 } } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

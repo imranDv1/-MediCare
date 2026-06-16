@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Receipt - {{ sale.invoice_no }}{% endblock %}
+
+{% block content %}
+<div class="no-print text-center mb-3">
+    <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Print Receipt</button>
+    <a href="{% url 'sale_detail' sale.pk %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="receipt-container">
+    <div class="receipt-header">
+        <div class="receipt-title">MediCare</div>
+        <div style="font-size:11px;color:var(--text-tertiary);">Medicine Management System</div>
+        <div style="font-size:11px;color:var(--text-tertiary);">123 Pharmacy Street, Medical District</div>
+        <div style="font-size:11px;color:var(--text-tertiary);">Phone: (555) 123-4567</div>
+        <div class="receipt-divider"></div>
+        <div style="font-size:14px;font-weight:500;">SALES RECEIPT</div>
+    </div>
+
+    <table style="width:100%;font-size:12px;margin-bottom:12px;">
+        <tr>
+            <td style="color:var(--text-tertiary);">Invoice #:</td>
+            <td style="text-align:right;font-weight:500;">{{ sale.invoice_no }}</td>
+        </tr>
+        <tr>
+            <td style="color:var(--text-tertiary);">Date:</td>
+            <td style="text-align:right;">{{ sale.timestamp|date:'Y-m-d H:i' }}</td>
+        </tr>
+        <tr>
+            <td style="color:var(--text-tertiary);">Cashier:</td>
+            <td style="text-align:right;">{{ sale.user.get_full_name|default:sale.user.username }}</td>
+        </tr>
+        {% if sale.patient_name %}
+        <tr>
+            <td style="color:var(--text-tertiary);">Patient:</td>
+            <td style="text-align:right;">{{ sale.patient_name }}</td>
+        </tr>
+        {% endif %}
+        {% if sale.doctor_ref %}
+        <tr>
+            <td style="color:var(--text-tertiary);">Doctor Ref:</td>
+            <td style="text-align:right;">{{ sale.doctor_ref }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td style="color:var(--text-tertiary);">Payment:</td>
+            <td style="text-align:right;">{{ sale.get_payment_method_display }}</td>
+        </tr>
+    </table>
+
+    <div style="border-top:1px dashed var(--border-default);border-bottom:1px dashed var(--border-default);padding:6px 0;margin-bottom:8px;">
+        <table style="width:100%;font-size:11px;font-weight:500;">
+            <tr>
+                <td style="width:40%;">Item</td>
+                <td style="width:15%;text-align:center;">Qty</td>
+                <td style="width:20%;text-align:right;">Price</td>
+                <td style="width:25%;text-align:right;">Total</td>
+            </tr>
+        </table>
+    </div>
+
+    {% for item in sale.items.all %}
+    <table style="width:100%;font-size:11px;margin-bottom:4px;">
+        <tr>
+            <td style="width:40%;">{{ item.medicine.name }}</td>
+            <td style="width:15%;text-align:center;">{{ item.quantity }}</td>
+            <td style="width:20%;text-align:right;">${{ item.unit_price|floatformat:2 }}</td>
+            <td style="width:25%;text-align:right;">${{ item.subtotal|floatformat:2 }}</td>
+        </tr>
+        {% if item.medicine.strength %}
+        <tr>
+            <td colspan="4" style="font-size:10px;color:var(--text-tertiary);padding-left:8px;">{{ item.medicine.strength }}</td>
+        </tr>
+        {% endif %}
+    </table>
+    {% endfor %}
+
+    <div class="receipt-divider" style="margin-top:8px;"></div>
+    <table style="width:100%;font-size:12px;margin-top:8px;">
+        <tr>
+            <td style="color:var(--text-tertiary);">Subtotal:</td>
+            <td style="text-align:right;">${{ sale.subtotal|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td style="color:var(--text-tertiary);">Discount:</td>
+            <td style="text-align:right;">{{ sale.discount|floatformat:2 }}{% if sale.discount > 0 %}%{% endif %}</td>
+        </tr>
+        <tr style="font-weight:500;font-size:15px;">
+            <td>Grand Total:</td>
+            <td style="text-align:right;">${{ sale.total|floatformat:2 }}</td>
+        </tr>
+    </table>
+
+    <div style="text-align:center;border-top:1px dashed var(--border-default);padding-top:12px;margin-top:12px;font-size:11px;color:var(--text-tertiary);">
+        <p style="margin:0 0 4px 0;font-size:13px;font-weight:500;color:var(--text-primary);">Thank you for your purchase!</p>
+        <p style="margin:0;">Items sold are non-returnable. Please check your medicine before leaving.</p>
+        <p style="margin:4px 0 0 0;">Prescription required for prescription medicines.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    window.onload = function() {
+        window.print();
+    };
+</script>
+{% endblock %}

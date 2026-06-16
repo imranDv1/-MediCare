@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Category Report{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Category Report</h1>
+</div>
+
+{% if categories %}
+<div class="row g-4 mb-4">
+    {% for cat in categories %}
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="category-icon">
+                    {% if cat.icon %}
+                    <i class="{{ cat.icon }}"></i>
+                    {% else %}
+                    <i class="fas fa-tag"></i>
+                    {% endif %}
+                </div>
+                <h5>{{ cat.name }}</h5>
+                <div class="row g-0 mt-3">
+                    <div class="col-4">
+                        <small class="text-muted d-block">Medicines</small>
+                        <strong>{{ cat.medicine_count }}</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Stock</small>
+                        <strong>{{ cat.total_stock }}</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Value</small>
+                        <strong>${{ cat.total_value|floatformat:2 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><h5>Category Distribution</h5></div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header"><h5>Category Breakdown</h5></div>
+            <div class="card-body">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Icon</th>
+                                <th>Medicine Count</th>
+                                <th>Total Stock</th>
+                                <th>Total Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cat in categories %}
+                            <tr>
+                                <td><strong>{{ cat.name }}</strong></td>
+                                <td>{% if cat.icon %}<i class="{{ cat.icon }}"></i>{% else %}<i class="fas fa-tag text-muted"></i>{% endif %}</td>
+                                <td>{{ cat.medicine_count }}</td>
+                                <td>{{ cat.total_stock }}</td>
+                                <td><span class="price">${{ cat.total_value|floatformat:2 }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <i class="fas fa-tags"></i>
+            <h5>No Categories Found</h5>
+            <p>There are no medicine categories to report on.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {{ category_chart_data|safe }},
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

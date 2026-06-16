@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>Notifications</h1>
+    <div>
+        <a href="{% url 'mark_all_read' %}" class="btn btn-secondary"><i class="fas fa-check-double"></i> Mark All Read</a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'notification_list' %}" class="btn btn-sm {% if not request.GET.type %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+            <a href="{% url 'notification_list' %}?type=low_stock" class="btn btn-sm {% if request.GET.type == 'low_stock' %}btn-primary{% else %}btn-secondary{% endif %}"><i class="fas fa-exclamation-triangle text-warning"></i> Low Stock</a>
+            <a href="{% url 'notification_list' %}?type=near_expiry" class="btn btn-sm {% if request.GET.type == 'near_expiry' %}btn-primary{% else %}btn-secondary{% endif %}"><i class="fas fa-clock text-warning"></i> Near Expiry</a>
+            <a href="{% url 'notification_list' %}?type=expired" class="btn btn-sm {% if request.GET.type == 'expired' %}btn-primary{% else %}btn-secondary{% endif %}"><i class="fas fa-skull text-danger"></i> Expired</a>
+            <a href="{% url 'notification_list' %}?type=new_sale" class="btn btn-sm {% if request.GET.type == 'new_sale' %}btn-primary{% else %}btn-secondary{% endif %}"><i class="fas fa-cash-register text-success"></i> New Sale</a>
+            <a href="{% url 'notification_list' %}?type=system" class="btn btn-sm {% if request.GET.type == 'system' %}btn-primary{% else %}btn-secondary{% endif %}"><i class="fas fa-gear text-primary"></i> System</a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if notifications %}
+        <div class="notification-list">
+            {% for notification in notifications %}
+            <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-id="{{ notification.pk }}">
+                <div class="notification-icon">
+                    {% if notification.notification_type == 'low_stock' %}
+                    <i class="fas fa-exclamation-triangle" style="color:#f97316;"></i>
+                    {% elif notification.notification_type == 'near_expiry' %}
+                    <i class="fas fa-clock" style="color:#f97316;"></i>
+                    {% elif notification.notification_type == 'expired' %}
+                    <i class="fas fa-skull" style="color:#ef4444;"></i>
+                    {% elif notification.notification_type == 'new_sale' %}
+                    <i class="fas fa-cash-register" style="color:#22c55e;"></i>
+                    {% elif notification.notification_type == 'system' %}
+                    <i class="fas fa-gear" style="color:#3b82f6;"></i>
+                    {% endif %}
+                </div>
+                <div class="notification-content">
+                    <div class="notification-message">
+                        {{ notification.message }}
+                        {% if not notification.is_read %}
+                        <span class="badge badge-neutral ms-1">NEW</span>
+                        {% endif %}
+                    </div>
+                    <div class="notification-time">{{ notification.created_at|timesince }} ago</div>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    {% if not notification.is_read %}
+                    <a href="{% url 'mark_as_read' notification.pk %}" class="btn btn-sm btn-secondary" title="Mark as read"><i class="fas fa-check"></i></a>
+                    {% endif %}
+                    <a href="{% url 'delete_notification' notification.pk %}" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Delete this notification?')"><i class="fas fa-trash-alt"></i></a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-bell-slash"></i>
+            <h5>No Notifications</h5>
+            <p>You're all caught up! No notifications to display.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.notification-item.unread .btn-secondary').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var item = this.closest('.notification-item');
+            var url = this.getAttribute('href');
+            fetch(url, {
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            }).then(function() {
+                item.classList.remove('unread');
+                var badge = item.querySelector('.badge');
+                if (badge) badge.remove();
+                var markBtn = item.querySelector('.btn-secondary');
+                if (markBtn) markBtn.remove();
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
