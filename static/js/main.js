@@ -32,13 +32,7 @@ $(document).ready(function() {
         $('input[type="date"]').attr('placeholder', 'dd/mm/yyyy');
     }
 
-    $('#id_image').on('change', function(e) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            $('#image-preview').attr('src', e.target.result).show();
-        };
-        if (this.files[0]) reader.readAsDataURL(this.files[0]);
-    });
+
 });
 
 function formatCurrency(amount) {
