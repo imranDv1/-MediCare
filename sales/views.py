@@ -18,7 +18,7 @@ from .models import Sale, SaleItem
 
 def pharmacist_required(view_func):
     decorated_view = user_passes_test(
-        lambda u: u.is_authenticated and u.role in ['admin', 'pharmacist', 'staff'],
+        lambda u: u.is_authenticated and u.role in ['admin', 'pharmacist'],
         login_url='/login/',
     )(view_func)
     return decorated_view

@@ -30,7 +30,7 @@
                     <option value="">All Roles</option>
                     <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin</option>
                     <option value="pharmacist" {% if role_filter == 'pharmacist' %}selected{% endif %}>Pharmacist</option>
-                    <option value="staff" {% if role_filter == 'staff' %}selected{% endif %}>Staff</option>
+
                 </select>
             </div>
             <div class="col-md-2">
@@ -74,13 +74,7 @@
                         </td>
                         <td>{{ user_obj.email|default:'—' }}</td>
                         <td>
-                            {% if user_obj.is_superuser %}
-                            <span class="badge badge-neutral">Admin</span>
-                            {% elif user_obj.is_staff %}
-                            <span class="badge badge-neutral">Pharmacist</span>
-                            {% else %}
-                            <span class="badge badge-neutral">Staff</span>
-                            {% endif %}
+                            <span class="badge badge-neutral">{{ user_obj.get_role_display }}</span>
                         </td>
                         <td>{{ user_obj.phone|default:'—' }}</td>
                         <td>

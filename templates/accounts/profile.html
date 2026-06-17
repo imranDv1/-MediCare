@@ -21,13 +21,7 @@
                 <h5 style="font-weight:500;margin-bottom:4px;">{{ user.get_full_name|default:user.username }}</h5>
                 <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:12px;">@{{ user.username }}</p>
                 <div class="mb-3">
-                    {% if user.is_superuser %}
-                    <span class="badge badge-neutral">Admin</span>
-                    {% elif user.is_staff %}
-                    <span class="badge badge-neutral">Staff</span>
-                    {% else %}
-                    <span class="badge badge-neutral">User</span>
-                    {% endif %}
+                    <span class="badge badge-neutral">{{ user.get_role_display }}</span>
                 </div>
                 <hr>
                 <div class="text-start" style="font-size:13px;">

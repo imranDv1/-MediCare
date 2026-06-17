@@ -84,16 +84,17 @@
                                 {% endif %}
                             </div>
                         </div>
+                        {% if object %}
                         <div class="col-12">
                             <hr style="margin:8px 0;border-color:var(--border-default);">
                             <p style="font-weight:500;margin-bottom:8px;font-size:13px;">
-                                <i class="fas fa-key me-1"></i> {% if object %}Change Password <small style="font-weight:400;color:var(--text-tertiary);">(leave blank to keep current)</small>{% else %}Password{% endif %}
+                                <i class="fas fa-key me-1"></i> Change Password <small style="font-weight:400;color:var(--text-tertiary);">(leave blank to keep current)</small>
                             </p>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">{% if object %}New password{% else %}Password{% endif %}</label>
-                                <input type="password" name="password1" class="form-control" placeholder="{% if object %}New password (optional){% else %}Password{% endif %}"{% if not object %} required{% endif %}>
+                                <label class="form-label">New password</label>
+                                <input type="password" name="password1" class="form-control" placeholder="New password (optional)">
                                 {% if password_form.password1.help_text %}
                                 <div class="form-hint">{{ password_form.password1.help_text }}</div>
                                 {% endif %}
@@ -104,13 +105,36 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Confirm{% if object %} new{% endif %} password</label>
-                                <input type="password" name="password2" class="form-control" placeholder="{% if object %}Confirm new password (optional){% else %}Confirm password{% endif %}"{% if not object %} required{% endif %}>
+                                <label class="form-label">Confirm new password</label>
+                                <input type="password" name="password2" class="form-control" placeholder="Confirm new password (optional)">
                                 {% if password_form.password2.errors %}
                                 <div class="form-error">{{ password_form.password2.errors }}</div>
                                 {% endif %}
                             </div>
                         </div>
+                        {% else %}
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.password1.label }}</label>
+                                {{ form.password1 }}
+                                {% if form.password1.help_text %}
+                                <div class="form-hint">{{ form.password1.help_text }}</div>
+                                {% endif %}
+                                {% if form.password1.errors %}
+                                <div class="form-error">{{ form.password1.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.password2.label }}</label>
+                                {{ form.password2 }}
+                                {% if form.password2.errors %}
+                                <div class="form-error">{{ form.password2.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
                         <div class="col-12">
                             <div class="mb-3">
                                 <div class="form-check">

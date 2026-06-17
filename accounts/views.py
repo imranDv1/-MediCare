@@ -107,7 +107,7 @@ def user_create(request):
     else:
         form = CustomUserCreationForm()
 
-    return render(request, 'accounts/user_form.html', {'form': form, 'title': 'Create User'})
+    return render(request, 'accounts/user_form.html', {'form': form, 'password_form': AdminPasswordResetForm(), 'title': 'Create User'})
 
 
 @login_required

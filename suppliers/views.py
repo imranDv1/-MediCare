@@ -1,13 +1,22 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Q
 from django.http import JsonResponse
 from .models import Supplier
 from .forms import SupplierForm
 
 
+def admin_required(view_func):
+    decorated_view = user_passes_test(
+        lambda u: u.is_authenticated and u.role == 'admin',
+        login_url='/login/',
+    )(view_func)
+    return decorated_view
+
+
 @login_required
+@admin_required
 def supplier_list(request):
     query = request.GET.get('q', '')
     suppliers = Supplier.objects.all()
@@ -25,6 +34,7 @@ def supplier_list(request):
 
 
 @login_required
+@admin_required
 def supplier_create(request):
     if request.method == 'POST':
         form = SupplierForm(request.POST)
@@ -38,6 +48,7 @@ def supplier_create(request):
 
 
 @login_required
+@admin_required
 def supplier_edit(request, pk):
     supplier = get_object_or_404(Supplier, pk=pk)
     if request.method == 'POST':
@@ -52,6 +63,7 @@ def supplier_edit(request, pk):
 
 
 @login_required
+@admin_required
 def supplier_detail(request, pk):
     supplier = get_object_or_404(Supplier, pk=pk)
     medicines = supplier.medicines.select_related('category').all()
@@ -63,6 +75,7 @@ def supplier_detail(request, pk):
 
 
 @login_required
+@admin_required
 def supplier_delete(request, pk):
     supplier = get_object_or_404(Supplier, pk=pk)
     if request.method == 'POST':

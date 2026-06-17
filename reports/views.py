@@ -1,5 +1,5 @@
 from datetime import date, timedelta, datetime
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render
 from django.db.models import Sum, Count, F, Q
 from django.http import HttpResponse, JsonResponse
@@ -15,7 +15,16 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 
 
+def admin_required(view_func):
+    decorated_view = user_passes_test(
+        lambda u: u.is_authenticated and u.role == 'admin',
+        login_url='/login/',
+    )(view_func)
+    return decorated_view
+
+
 @login_required
+@admin_required
 def reports_dashboard(request):
     return render(request, 'reports/reports_dashboard.html', {
         'total_medicines': Medicine.objects.count(),
@@ -26,6 +35,7 @@ def reports_dashboard(request):
 
 
 @login_required
+@admin_required
 def sales_report(request):
     start_date = request.GET.get('start_date', (date.today() - timedelta(days=30)).isoformat())
     end_date = request.GET.get('end_date', date.today().isoformat())
@@ -65,6 +75,7 @@ def sales_report(request):
 
 
 @login_required
+@admin_required
 def inventory_report(request):
     medicines = Medicine.objects.select_related('category', 'supplier').all()
     total_stock_value = sum(m.price * m.stock_quantity for m in medicines)
@@ -90,6 +101,7 @@ def inventory_report(request):
 
 
 @login_required
+@admin_required
 def expiry_report(request):
     days = int(request.GET.get('days', 30))
     today = date.today()
@@ -108,6 +120,7 @@ def expiry_report(request):
 
 
 @login_required
+@admin_required
 def category_report(request):
     categories = Category.objects.annotate(
         medicine_count=Count('medicines'),
@@ -127,6 +140,7 @@ def category_report(request):
 
 
 @login_required
+@admin_required
 def export_sales_csv(request):
     start_date = request.GET.get('start_date', (date.today() - timedelta(days=30)).isoformat())
     end_date = request.GET.get('end_date', date.today().isoformat())
@@ -145,6 +159,7 @@ def export_sales_csv(request):
 
 
 @login_required
+@admin_required
 def export_inventory_csv(request):
     medicines = Medicine.objects.select_related('category', 'supplier').all()
 
@@ -160,6 +175,7 @@ def export_inventory_csv(request):
 
 
 @login_required
+@admin_required
 def export_sales_pdf(request):
     start_date = request.GET.get('start_date', (date.today() - timedelta(days=30)).isoformat())
     end_date = request.GET.get('end_date', date.today().isoformat())
@@ -202,6 +218,7 @@ def export_sales_pdf(request):
 
 
 @login_required
+@admin_required
 def export_inventory_pdf(request):
     medicines = Medicine.objects.select_related('category').all()
 

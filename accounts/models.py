@@ -8,9 +8,8 @@ class CustomUser(AbstractUser):
     ROLE_CHOICES = [
         ('admin', 'Admin'),
         ('pharmacist', 'Pharmacist'),
-        ('staff', 'Staff'),
     ]
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='staff')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='pharmacist')
     phone = models.CharField(max_length=20, blank=True)
     avatar = models.URLField(max_length=500, blank=True, default='')
 
